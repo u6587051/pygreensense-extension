@@ -1,0 +1,32 @@
+# -----------------------------
+# 1. VS Code Extension & Node.js
+# -----------------------------
+node_modules/
+dist/
+out/
+.vscode-test/
+*.vsix
+.DS_Store
+
+# -----------------------------
+# 2. Python Environment & Cache
+# -----------------------------
+# ป้องกันโฟลเดอร์ Environment (ไม่ว่าจะชื่อ .venv, venv, หรือ env)
+.venv/
+venv/
+env/
+
+# ป้องกันไฟล์ Compiled ของ Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+
+# -----------------------------
+# 3. PyGreenSense Runtime Data
+# -----------------------------
+# จาก Structure ของคุณ ไฟล์พวกนี้ถูกสร้างตอนรัน ไม่ควรเอาขึ้น Git
+src/python_source/history.json
+src/python_source/powermetrics_log.txt
+*.log

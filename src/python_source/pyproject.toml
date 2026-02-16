@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pygreensense-lib"
+version = "0.1.0"
+description = "A Python library for Green Code Smell detection and Carbon Tracking"
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [
+  {name = "Jittakan Damrongtrakoonwat", email = "jittakan.dam@gmail.com"}
+]
+keywords = ["green-coding", "static-analysis", "carbon-tracking", "vscode-extension"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "codecarbon>=2.0.0",
+]
+
+[project.scripts]
+# ทำให้เรียกคำสั่ง 'pygreensense' ใน terminal ได้เลย โดยมันจะไปเรียกฟังก์ชัน main ใน cli.py
+pygreensense = "pygreensense_lib.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pygreensense_lib*"]
