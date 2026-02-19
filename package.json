@@ -9,15 +9,26 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onLanguage:python"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "pygreensense-extension.helloWorld",
-        "title": "Hello World"
+        "command": "pygreensense.analyze",
+        "title": "PyGreenSense: Analyze Green Code"
       }
-    ]
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "pygreensense.analyze",
+          "when": "resourceLangId == python",
+          "group": "navigation"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run package",

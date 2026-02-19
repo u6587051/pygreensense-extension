@@ -42,7 +42,7 @@ def main():
         args = parser.parse_args()
 
         # Pre-process logic (เหมือน cli.py)
-        if args.path == "run":
+        if getattr(args, 'path', None) == "run":
             args.path = "."
             
         if getattr(args, 'dup_check_within_only', False):
@@ -63,27 +63,45 @@ def main():
         # 4. EXECUTE ANALYSIS (Silence Output)
         # =========================================================
         # ใช้ StringIO เพื่อดักจับ Text ที่ cli.py อาจจะ print ออกมา (ไม่ให้ปนกับ JSON)
-        f = io.StringIO()
-        with contextlib.redirect_stdout(f):
-            # 4.1 Run Code Smell Analysis
+        
+        # =========================================================
+        # 🌟 จุดที่เพิ่มใหม่: บังคับรัน Carbon อัตโนมัติ
+        # ถ้า target_path เป็นไฟล์ (.py) ให้เอาไฟล์นั้นไปรันวัดคาร์บอนเลย
+        # โดยไม่ต้องรอให้ผู้ใช้พิมพ์ --carbon-run
+        # =========================================================
+        if not getattr(args, 'carbon_run', None) and target_path.is_file():
+            args.carbon_run = str(target_path)
+        
+        # ถ้ารันทั้งโฟลเดอร์ (.) แล้วไม่ได้ใส่ --carbon-run จะปล่อยให้ 
+        # cli.py จัดการหา Entry point (main.py) เอง
+
+        # =========================================================
+        # จับ Output เพื่อไม่ให้ Text ขยะปนกับ JSON
+        # =========================================================
+        captured_output = io.StringIO()
+        with contextlib.redirect_stdout(captured_output):
+            
+            # 1. รันหา Code Smells
             all_results, total_loc = analyze_code_smells(args.path, args)
             
-            # 4.2 Run Carbon Tracking (เรียกใช้ฟังก์ชันที่เราเพิ่งแก้ให้ return ค่า)
+            # 2. รันหา Carbon เสมอ
+            # (ตอนนี้ args.carbon_run จะมีค่าเป็น 'bad_code.py' แล้ว)
             carbon_data = carbon_track(args.path, args, total_loc)
 
         # =========================================================
         # 5. FORMAT JSON OUTPUT
         # =========================================================
-        json_results = {}
+        # เปลี่ยนจาก Dict {} เป็น List [] เพื่อให้เหมือน pygreensense CLI output
+        json_results = []
         
         # 5.1 Format Code Smell Results
         for file_path, issues in all_results.items():
             path_str = str(file_path)
-            if path_str not in json_results:
-                json_results[path_str] = []
             
             for issue in issues:
-                json_results[path_str].append({
+                # สร้าง Object ที่หน้าตาเหมือน pygreensense output เป๊ะๆ
+                json_results.append({
+                    "file": path_str,  # เพิ่ม Key 'file' เข้าไปใน object
                     "rule": issue.get('rule'),
                     "message": issue.get('message'),
                     "lineno": issue.get('lineno'),
@@ -91,10 +109,11 @@ def main():
                     "severity": issue.get('severity', 'Warning')
                 })
 
-        # 5.2 Format Carbon Report (Map ข้อมูลตามที่คุณขอ)
+        # 5.2 Format Carbon Report (เหมือนเดิม)
         carbon_report = None
         if carbon_data:
             carbon_report = {
+                # ... (คงโค้ดเดิมไว้) ...
                 "execution_details": {
                     "target_file": carbon_data.get("target_file"),
                     "duration_seconds": carbon_data.get("duration_seconds")
@@ -124,16 +143,18 @@ def main():
             "data": {
                 "summary": {
                     "total_files": len(all_results),
-                    "total_issues": sum(len(i) for i in all_results.values()),
+                    # นับจำนวน issues จาก list โดยตรง
+                    "total_issues": len(json_results),
                     "total_smell_loc": total_loc
                 },
-                "results": json_results,
-                # "carbon_report": carbon_report,  # ✅ เพิ่มส่วนนี้เข้ามา
+                "results": json_results, # ตรงนี้จะเป็น List แล้ว
+                "carbon_report": carbon_report,
             }
         }
         
-        # Print JSON Output
-        # print(json.dumps(response, indent=2))
+        # Print JSON Output (ใช้เทคนิคแก้ Dirty Stdout ที่แนะนำไปก่อนหน้า)
+        sys.stdout = sys.__stdout__ # หรือตัวแปร real_stdout ถ้าคุณเก็บไว้
+        print(json.dumps(response, indent=2))
 
     except Exception as e:
         sys.stderr.write(traceback.format_exc())
